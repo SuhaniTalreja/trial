@@ -1,92 +1,108 @@
-This example demonstrates a React homepage using Create React App with CSS Modules for styling.
+This example uses a simplified approach with Node.js, Express.js, and an in-memory user store for demonstration.  **Do not use this code in a production environment without significant security enhancements.**  A production system requires a robust database, proper password hashing (e.g., bcrypt), and protection against various attacks.
 
-**1. Project Setup (Assuming you already have a Create React App project):**
-
-If you don't have a Create React App project, run:  `npx create-react-app my-react-homepage`
-
-**2. Create the `components` directory:**
-
-Inside your `my-react-homepage/src` directory, create a `components` folder if it doesn't already exist.
-
-**3. Create `Home.js` and `Home.module.css`:**
-
-Inside `my-react-homepage/src/components`, create these files:
-
-**`src/components/Home.js`:**
+**1. Backend (server.js):**
 
 ```javascript
-import React from 'react';
-import styles from './Home.module.css';
+const express = require('express');
+const app = express();
+const port = 3000;
 
-const Home = () => {
-  return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Welcome to My Homepage!</h1>
-      <p className={styles.paragraph}>This is some placeholder content.  You can add more sections here, such as an "About Us" section, a "Services" section, or a featured projects section.</p>
-      <img className={styles.image} src="placeholder-image.jpg" alt="Placeholder Image" /> {/* Replace with your image */}
-    </div>
-  );
+// In-memory user store (REPLACE WITH A DATABASE IN PRODUCTION!)
+const users = {
+  'testuser': 'testpassword' //  NEVER store passwords like this!
 };
 
-export default Home;
+app.use(express.json()); // for parsing application/json
+
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: 'Username and password are required' });
+  }
+
+  if (users[username] === password) {
+    // In a real application, generate a JWT or session token here.
+    res.json({ message: 'Login successful', token: 'mock-token' }); // Mock token
+  } else {
+    res.status(401).json({ error: 'Invalid credentials' });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
+});
 ```
 
-**`src/components/Home.module.css`:**
+**2. Frontend (index.html):**
 
-```css
-.container {
-  text-align: center;
-  padding: 20px;
-}
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login Page</title>
+<style>
+  body { font-family: sans-serif; }
+  form { display: flex; flex-direction: column; width: 300px; margin: 0 auto; }
+  label { margin-bottom: 5px; }
+  input { margin-bottom: 10px; padding: 8px; }
+  button { padding: 8px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+  .error { color: red; }
+</style>
+</head>
+<body>
+  <form id="loginForm">
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username" required>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+    <button type="submit">Login</button>
+    <div id="message"></div>
+  </form>
 
-.title {
-  color: #333; /* Dark gray */
-  font-size: 2em;
-  margin-bottom: 1em;
-}
+  <script>
+    const form = document.getElementById('loginForm');
+    const messageDiv = document.getElementById('message');
 
-.paragraph {
-  font-size: 1.2em;
-  line-height: 1.6;
-  margin-bottom: 1em;
-  color: #555; /* Lighter gray */
-}
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
 
-.image {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 0 auto;
-}
+      try {
+        const response = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          messageDiv.textContent = data.message; // Show success message
+          // Redirect to a protected page or handle the token
+          console.log("Token:", data.token);
+        } else {
+          const errorData = await response.json();
+          messageDiv.textContent = errorData.error || 'Login failed'; // Show error message
+          messageDiv.classList.add('error');
+        }
+      } catch (error) {
+        messageDiv.textContent = 'An error occurred';
+        messageDiv.classList.add('error');
+      }
+    });
+  </script>
+</body>
+</html>
 ```
 
-**4. Update `App.js`:**
+To run this:
 
-Replace the contents of `src/App.js` with:
-
-```javascript
-import React from 'react';
-import Home from './components/Home';
-import './App.css'; // Import your main App CSS if needed.
-
-function App() {
-  return (
-    <div className="App">
-      <Home />
-    </div>
-  );
-}
-
-export default App;
-```
-
-**5. Add Placeholder Image:**
-
-Create a `placeholder-image.jpg` (or similar) and place it in the `public` directory of your project.  Adjust the `src` attribute in `Home.js` if you name it differently.
-
-**6. Run the application:**
-
-Navigate to your project directory in the terminal and run `npm start` (or `yarn start`).  This should start your development server and display your homepage in the browser.
+1.  Save the backend code as `server.js` and the frontend code as `index.html` in the same directory.
+2.  Make sure Node.js and npm are installed.
+3.  Run `npm install express` in your terminal.
+4.  Run `node server.js` to start the server.
+5.  Open `index.html` in your browser.
 
 
-This improved example includes a more structured layout, placeholder image, and better styling. Remember to replace the placeholder image and content with your own.  You can further enhance this with more advanced styling, dynamic content, and additional components as needed.
+Remember: This is a **very basic example** and lacks crucial security features needed for a production environment.  Use this as a starting point and build upon it with proper authentication, authorization, and security best practices.  Consider using a dedicated authentication library or service for a production application.
